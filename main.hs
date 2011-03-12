@@ -4,7 +4,7 @@ import qualified Network.Socket.Internal as NSI
 import System.IO (Handle, IOMode(ReadWriteMode), hPutStrLn, hGetLine, hClose)
 import Control.Concurrent (forkIO)
 import Control.Exception (finally)
-import Httphandler
+import Haskttpd.Handler
 
 listenAt :: Int -> (Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> IO ()) -> IO ()
 listenAt port f = do

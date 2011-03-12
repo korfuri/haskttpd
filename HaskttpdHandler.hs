@@ -1,21 +1,13 @@
-module Httphandler (
-                    handle
-                   ) where
+module Haskttpd.Handler (
+                         handle
+                        ) where
 
     import System.IO
     import qualified Network.Socket.Internal as NSI
-    import Text.ParserCombinators.Parsec
     import qualified Control.Exception as C (catch)
     import Control.Monad.Reader
-    import HttpConfig
-
-    data HttpRequest = HttpRequest {
-          reqmethod :: String,
-          reqressource :: String,
-          reqversion :: String,
-          reqheaders :: [(String, String)],
-          reqbody :: String
-        } deriving (Eq, Show)
+    import Haskttpd.Config
+    import Haskttpd.Parser
 
     data HttpReply = HttpReply {
           repversion :: String,
@@ -25,58 +17,6 @@ module Httphandler (
           repbody :: String
         } deriving (Eq)
 
-    httpBNF :: GenParser Char st HttpRequest
-    httpBNF = do
-      method <- word
-      whitespace
-      ressource <- ressourceBNF
-      whitespace
-      version <- word
-      eol
-      h <- many headerBNF
-      eol
---      body <- bodyBNF
-      return $ HttpRequest method ressource version h ""
-
-    word = many1 (noneOf " \r\n")
-    
-    ressourceBNF = word
-    
-    headerString = many1 (noneOf ": \r\n\t")
-    
-    headerBNF = do
-      h <- headerString
-      char ':'
-      whitespace
-      v <- many1 (noneOf "\r\n")
-      eol
-      return (h, v)
-
-    whitespace = many1 (char ' ')
-
-    eol = try (string "\n\r")
-          <|> try (string "\r\n")
-          <|> string "\n"
-          <|> string "\r"
-
-    bodyBNF = do
-      content <- many nonEmptyLine
-      return $ unlines content
-        where
-          nonEmptyLine = do
-                c <- many1 (noneOf "\r\n")
-                eol
-                return c
-
-    parseRequestFromStream :: Handle -> IO HttpRequest
-    parseRequestFromStream h = do
-      str <- hGetContents h
-      putStrLn $ "\n\n\n\nParsing :\n" ++ (take 50 str) ++ "\n"
-      case parse httpBNF "fail" str of
-        Left msg -> do
-          putStrLn (show msg)
-          return $ HttpRequest "GET" "/" "HTTP/1.1" [("host", "localhost")] ""
-        Right req -> return req
 
     httpHeadersToString hdrs = foldl step "" hdrs
         where step s (h, c) = s ++ h ++ ": " ++ c ++ "\n"
