@@ -1,4 +1,4 @@
-SRC	= main.hs HaskttpdConfig.hs HaskttpdHandler.hs HaskttpdParser.hs
+SRC	= main.hs HaskttpdConfig.hs HaskttpdHandler.hs HaskttpdParser.hs HaskttpdNetwork.hs
 
 HFLAGS	=		
 HLDFLAGS=	

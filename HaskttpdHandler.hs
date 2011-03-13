@@ -40,8 +40,8 @@ module Haskttpd.Handler (
                                    ) $ \_ ->
                                     return $ HttpReply (reqversion q) 404 "Not Found" [("server", "haskttpd")] "lolilol 404"
 
-    handle' :: Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO ()
-    handle' h cid connxInfos = do
+    handle :: Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO ()
+    handle h cid connxInfos = do
       conf <- ask
       let prependPath = getValueOrEmpty conf "DocumentRoot"
       req <- liftIO $ parseRequestFromStream h
@@ -50,6 +50,3 @@ module Haskttpd.Handler (
       liftIO $ putStrLn (show resp)
       liftIO $ hPutStr h (show resp)
 
-    handle :: Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> IO ()
-    handle h cid connxInfos = do
-      runReaderT (handle' h cid connxInfos) $ Config [("DocumentRoot", "/home/korfuri/")]

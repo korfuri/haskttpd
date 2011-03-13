@@ -20,10 +20,3 @@ module Haskttpd.Config (Config(Config),
         conf <- ask
         return $ getValueOrEmpty conf k
 
-{-
-  85000$
-  1640/wk
-  +5000$ reloc
-  date & time
-  exact name (passport)
--}
