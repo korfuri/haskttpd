@@ -37,6 +37,5 @@ module Haskttpd.Network (
     startServer = do
       currentConfig <- ask
       port <- (getKey "BindPort")
-      let port' = (read port) :: Int
-      liftIO $ listenAt 12345 $ (serveARequest currentConfig)
+      liftIO $ listenAt port $ (serveARequest currentConfig)
       return ()

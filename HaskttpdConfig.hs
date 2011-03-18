@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+
 module Haskttpd.Config (Config(Config),
                         getValueOrEmpty,
                         getValue,
@@ -5,17 +7,32 @@ module Haskttpd.Config (Config(Config),
     where
       import Control.Monad.Reader
 
-      data Config = Config [(String, String)]
-                    deriving (Eq, Show, Read)
+      data Config = Config {
+            strValues :: [(String, String)],
+            numValues :: [(String, Int)]
+          } deriving (Eq, Show, Read)
 
-      getValueOrEmpty :: Config -> String -> String
-      getValueOrEmpty (Config c) k = case lookup k c of
-                              Nothing -> ""
-                              Just x -> x
+      class Configurable c where
+        getValueOrEmpty :: Config -> String -> c
+        getValue :: Config -> String -> Maybe c
 
-      getValue k (Config c) = lookup c k
+      instance Configurable String where
+          getValueOrEmpty c k = case lookup k (strValues c) of
+                                  Nothing -> ""
+                                  Just x -> x
+                                  
+          getValue c k = lookup k (strValues c)
+          
+      instance Configurable Int where
+          getValueOrEmpty c k = case lookup k (numValues c) of
+                                  Nothing -> 0
+                                  Just x -> x
+                                  
+          getValue c k = lookup k (numValues c)
 
-      getKey :: String -> ReaderT Config IO String
+          
+
+      getKey :: (Configurable c) => String -> ReaderT Config IO c
       getKey k = do
         conf <- ask
         return $ getValueOrEmpty conf k
