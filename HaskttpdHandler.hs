@@ -32,7 +32,7 @@ module Haskttpd.Handler (
         show = httpReplyToString
 
     generateResponseInError q e
-        | isDoesNotExistError e = return $ HttpReply (reqversion q) 404 "Not Found" [("server", "haskttpd")] "File Not Found"
+        | isDoesNotExistError e = return $ HttpReply (reqversion q) 504 "Not Found" [("server", "haskttpd")] "File Not Found"
         | isPermissionError e = return  $ HttpReply (reqversion q) 403 "Permission denied" [("server", "haskttpd")] "Permission denied"
         | isAlreadyInUseError e = return  $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "Already in use"
         | isIllegalOperation e = return  $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "Illegal Operation"
@@ -42,23 +42,31 @@ module Haskttpd.Handler (
 --      putStrLn (show e)
       return $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "An internal error occurred"
 
-
-    generateResponse :: String -> HttpRequest -> Int -> (NSI.HostAddress, NSI.PortNumber) -> IO HttpReply
-    generateResponse prependPath q _ _ = Prelude.catch (do
-      let file = prependPath ++ reqressource q
-      fileh <- openBinaryFile file ReadMode
-      s <- hGetContents fileh
---      hClose fileh
-      return $ HttpReply (reqversion q) 200 "OK" [("server", "haskttpd")] s
-                 ) $ generateResponseInError q
-                     
-    handle :: Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO ()
-    handle h cid connxInfos = do
+    generateResponseFile :: HttpRequest -> ReaderT Config IO HttpReply
+    generateResponseFile q = do
       conf <- ask
       let prependPath = getValueOrEmpty conf "DocumentRoot"
-      req <- liftIO $ parseRequestFromStream h
---      liftIO $ putStrLn (show req)
-      resp <- liftIO $ generateResponse prependPath req cid connxInfos
---      liftIO $ putStrLn (show resp)
-      liftIO $ hPutStr h (show resp)
+      let file = prependPath ++ reqressource q
+      fileh <- liftIO $ openBinaryFile file ReadMode
+      s <- liftIO $ hGetContents fileh
+      return $ HttpReply (reqversion q) 200 "OK" [("server", "haskttpd")] s
 
+
+    attemptAllResponseGenerators :: HttpRequest -> ReaderT Config IO HttpReply
+    attemptAllResponseGenerators q = do
+--      generateResponseIndex q
+--      generateResponseAutoIndex q
+      generateResponseFile q
+--      return $ HttpReply (reqversion q) 504 "Not Found" [("server", "haskttpd")] "File Not Found"
+
+    generateResponse :: HttpRequest -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO HttpReply
+    generateResponse q _ _ = do
+      conf <- ask
+      liftIO $ do
+        Prelude.catch (do runReaderT (attemptAllResponseGenerators q) (conf)) $ generateResponseInError q
+
+    handle :: Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO ()
+    handle h cid connxInfos = do
+      req <- liftIO $ parseRequestFromStream h
+      resp <- generateResponse req cid connxInfos
+      liftIO $ hPutStr h (show resp)
