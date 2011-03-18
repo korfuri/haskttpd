@@ -12,16 +12,14 @@ module Haskttpd.Network (
     import Control.Monad.Reader
     
     
-    listenAt :: Int -> (Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO ()) -> ReaderT Config IO ()
+    listenAt :: Int -> (Handle -> Int -> (NSI.HostAddress, NSI.PortNumber) -> IO ()) -> IO ()
     listenAt port f = do
-      lsock <- liftIO $ do
-        let port' = toEnum port
-        lsock <- socket AF_INET Stream 0
-        setSocketOption lsock ReuseAddr 1
-        bindSocket lsock $ SockAddrInet port' iNADDR_ANY
-        listen lsock sOMAXCONN
-        return lsock
-      return ((runReaderT ask $ loop lsock 0) `finally` sClose lsock)
+      let port' = toEnum port
+      lsock <- socket AF_INET Stream 0
+      setSocketOption lsock ReuseAddr 1
+      bindSocket lsock $ SockAddrInet port' iNADDR_ANY
+      listen lsock sOMAXCONN
+      loop lsock 0 `finally` sClose lsock
       return ()
           where
             loop lsock cid = do
@@ -40,7 +38,5 @@ module Haskttpd.Network (
       currentConfig <- ask
       port <- (getKey "BindPort")
       let port' = (read port) :: Int
-      listenAt 12345 $ \h cid (addr, port) -> do
-        liftIO $ putStrLn "a"
-        liftIO $ serveARequest currentConfig h cid (addr, port)
+      liftIO $ listenAt 12345 $ (serveARequest currentConfig)
       return ()
