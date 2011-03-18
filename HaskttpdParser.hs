@@ -65,10 +65,10 @@ module Haskttpd.Parser (
     parseRequestFromStream :: Handle -> IO HttpRequest
     parseRequestFromStream h = do
       str <- hGetContents h
-      putStrLn $ "\n\n\n\nParsing :\n" ++ (take 50 str) ++ "\n"
+--      putStrLn $ "\n\n\n\nParsing :\n" ++ (take 50 str) ++ "\n"
       case parse httpBNF "fail" str of
         Left msg -> do
-          putStrLn (show msg)
+--          putStrLn (show msg)
           return $ HttpRequest "GET" "/" "HTTP/1.1" [("host", "localhost")] ""
         Right req -> return req
 

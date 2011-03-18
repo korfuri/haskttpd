@@ -39,7 +39,7 @@ module Haskttpd.Handler (
         | isUserError e = return  $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "User Error"
         | isEOFError e = return  $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "EOF Error"
         | otherwise = do
-      putStrLn (show e)
+--      putStrLn (show e)
       return $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "An internal error occurred"
 
 
@@ -57,8 +57,8 @@ module Haskttpd.Handler (
       conf <- ask
       let prependPath = getValueOrEmpty conf "DocumentRoot"
       req <- liftIO $ parseRequestFromStream h
-      liftIO $ putStrLn (show req)
+--      liftIO $ putStrLn (show req)
       resp <- liftIO $ generateResponse prependPath req cid connxInfos
-      liftIO $ putStrLn (show resp)
+--      liftIO $ putStrLn (show resp)
       liftIO $ hPutStr h (show resp)
 
