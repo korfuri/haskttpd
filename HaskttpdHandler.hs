@@ -9,6 +9,7 @@ module Haskttpd.Handler (
     import Control.Monad.Reader
     import Haskttpd.Config
     import Haskttpd.Parser
+    import Directory
 
     data HttpReply = HttpReply {
           repversion :: String,
@@ -42,21 +43,29 @@ module Haskttpd.Handler (
 --      putStrLn (show e)
       return $ HttpReply (reqversion q) 500 "Internal Error" [("server", "haskttpd")] "An internal error occurred"
 
-    generateResponseFile :: HttpRequest -> ReaderT Config IO HttpReply
-    generateResponseFile q = do
-      conf <- ask
-      let prependPath = getValueOrEmpty conf "DocumentRoot"
-      let file = prependPath ++ reqressource q
+    generateResponseFile :: HttpRequest -> String -> ReaderT Config IO HttpReply
+    generateResponseFile q file = do
       fileh <- liftIO $ openBinaryFile file ReadMode
       s <- liftIO $ hGetContents fileh
       return $ HttpReply (reqversion q) 200 "OK" [("server", "haskttpd")] s
 
 
+    generateResponseIndex :: HttpRequest -> String -> ReaderT Config IO HttpReply
+    generateResponseIndex q file = generateResponseFile q $ file ++ "/index.html"
+
     attemptAllResponseGenerators :: HttpRequest -> ReaderT Config IO HttpReply
     attemptAllResponseGenerators q = do
---      generateResponseIndex q
+      conf <- ask
+      let prependPath = getValueOrEmpty conf "DocumentRoot"
+      let file = prependPath ++ reqressource q
+          
+      isDir <- liftIO $ Directory.doesDirectoryExist file
+      if isDir
+       then do
+         generateResponseIndex q file
 --      generateResponseAutoIndex q
-      generateResponseFile q
+       else do
+         generateResponseFile q file
 --      return $ HttpReply (reqversion q) 504 "Not Found" [("server", "haskttpd")] "File Not Found"
 
     generateResponse :: HttpRequest -> Int -> (NSI.HostAddress, NSI.PortNumber) -> ReaderT Config IO HttpReply
