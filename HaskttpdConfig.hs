@@ -13,25 +13,23 @@ module Haskttpd.Config (Config(Config),
           } deriving (Eq, Show, Read)
 
       class Configurable c where
-        getValueOrEmpty :: Config -> String -> c
         getValue :: Config -> String -> Maybe c
+        empty :: c
+        getValueOrEmpty :: Config -> String -> c
+        getValueOrEmpty c k = 
+          case v of
+            Just x -> x
+            Nothing -> empty
+          where v = getValue c k
 
       instance Configurable String where
-          getValueOrEmpty c k = case lookup k (strValues c) of
-                                  Nothing -> ""
-                                  Just x -> x
-                                  
           getValue c k = lookup k (strValues c)
+          empty = ""
           
       instance Configurable Int where
-          getValueOrEmpty c k = case lookup k (numValues c) of
-                                  Nothing -> 0
-                                  Just x -> x
-                                  
           getValue c k = lookup k (numValues c)
-
+          empty = 0
           
-
       getKey :: (Configurable c) => String -> ReaderT Config IO c
       getKey k = do
         conf <- ask
