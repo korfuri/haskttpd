@@ -1,0 +1,1 @@
+Programming an HTTP server is a complete exercise which I find great to learn most languages. I'm learning Haskell, so here's my attempt. It's far from good, and I welcome feedback if you are willing to spend some time reading my sources.
